@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <title>Email Verification - Privacy Vault</title>
+   <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+      max-width: 500px;
+      width: 100%;
+      padding: 40px;
+      text-align: center;
+    }
+
+    .header {
+      margin-bottom: 30px;
+    }
+
+    .icon {
+      font-size: 60px;
+      margin-bottom: 15px;
+      animation: bounce 2s infinite;
+    }
+
+    @keyframes bounce {
+      0%, 100% {
+        transform: translateY(0);
+      }
+      50% {
+        transform: translateY(-10px);
+      }
+    }
+
+    .icon.error {
+      animation: shake 0.5s;
+      color: #e74c3c;
+    }
+
+    @keyframes shake {
+      0%, 100% {
+        transform: translateX(0);
+      }
+      10%, 30%, 50%, 70%, 90% {
+        transform: translateX(-5px);
+      }
+      20%, 40%, 60%, 80% {
+        transform: translateX(5px);
+      }
+    }
+
+    h1 {
+      color: #333;
+      font-size: 24px;
+      margin-bottom: 10px;
+    }
+
+    .subtitle {
+      color: #666;
+      font-size: 14px;
+      margin-bottom: 20px;
+    }
+
+    .message {
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .message.success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .message.error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+
+    .status-details {
+      background: #f9f9f9;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      text-align: left;
+    }
+
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid #eee;
+    }
+
+    .detail-row:last-child {
+      border-bottom: none;
+    }
+
+    .detail-label {
+      font-weight: 600;
+      color: #666;
+      font-size: 13px;
+    }
+
+    .detail-value {
+      color: #333;
+      font-size: 13px;
+    }
+
+    .btn {
+      padding: 12px 30px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-secondary {
+      background: white;
+      color: #667eea;
+      border: 2px solid #667eea;
+      margin-left: 10px;
+    }
+
+    .btn-secondary:hover {
+      background: #f8f9ff;
+    }
+
+    .actions {
+      margin-top: 25px;
+    }
+
+    .footer {
+      margin-top: 25px;
+      padding-top: 20px;
+      border-top: 1px solid #eee;
+      color: #999;
+      font-size: 12px;
+    }
+
+    .footer a {
+      color: #667eea;
+      text-decoration: none;
+    }
+
+    .footer a:hover {
+      text-decoration: underline;
+    }
+
+    .loading {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #667eea;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    .next-steps {
+      background: #f0f4ff;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      text-align: left;
+    }
+
+    .next-steps h3 {
+      color: #667eea;
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+
+    .next-steps ol {
+      margin-left: 20px;
+      color: #666;
+      font-size: 13px;
+    }
+
+    .next-steps li {
+      margin-bottom: 8px;
+    }
+
+    .resend-section {
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid #eee;
+    }
+
+    .resend-section p {
+      color: #666;
+      font-size: 13px;
+      margin-bottom: 12px;
+    }
+
+    .resend-btn {
+      background: white;
+      color: #667eea;
+      border: 2px solid #667eea;
+      padding: 10px 20px;
+      font-size: 13px;
+    }
+
+    .resend-btn:hover {
+      background: #f8f9ff;
+    }
+
+    @media (max-width: 600px) {
+      .container {
+        padding: 25px;
+      }
+
+      .icon {
+        font-size: 48px;
+      }
+
+      h1 {
+        font-size: 20px;
+      }
+
+      .btn-secondary {
+        display: block;
+        margin: 10px 0 0 0;
+        width: 100%;
+      }
+
+      .actions {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <% if (verified) { %>
+        <div class="icon">✅</div>
+        <h1>Email Verified!</h1>
+        <p class="subtitle">Your email has been successfully verified</p>
+      <% } else { %>
+        <div class="icon error">❌</div>
+        <h1>Verification Failed</h1>
+        <p class="subtitle">We couldn't verify your email address</p>
+      <% } %>
+    </div>
+
+    <div class="message <%= verified ? 'success' : 'error' %>"><%= message %></div>
+
+    <% if (verified) { %>
+      <!-- Success details ... unchanged -->
+      <div class="actions">
+        <a href="/login" class="btn btn-primary">Login to Account</a>
+        <a href="/dashboard" class="btn btn-secondary">Go to Dashboard</a>
+      </div>
+    <% } else { %>
+      <!-- Error details ... unchanged -->
+      <div class="actions">
+        <button class="btn btn-primary" id="resendBtn">📧 Resend Verification Email</button>
+      </div>
+      <div class="resend-section">
+        <p>Already have a verified account?</p>
+        <a href="/login" class="btn resend-btn">Login Here</a>
+      </div>
+    <% } %>
+
+    <div class="footer">
+      <p>🛡️ Privacy Vault - Secure Data Management</p>
+      <p>© 2025 Privacy Vault. All rights reserved. |
+        <a href="#">Privacy Policy</a> |
+        <a href="#">Terms of Service</a>
+      </p>
+    </div>
+  </div>
+
+  <script src="../../js/verify.js" defer></script>
+</body>
+</html>

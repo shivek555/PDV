@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en" data-user-id="<%= user.id %>" data-user-email="<%= user.email %>" data-username="<%= user.username %>">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - Privacy Vault</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    /* Styles kept inline for now; if CSP blocks style-src-attr, move to /public/css/dashboard.css */
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:#f5f7fa;color:#333}
+    .navbar{background:#fff;padding:15px 30px;box-shadow:0 2px 5px rgba(0,0,0,.1);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100}
+    .navbar-brand{font-size:20px;font-weight:700;color:#667eea}
+    .navbar-menu{display:flex;gap:20px;align-items:center}
+    .navbar-menu a{color:#666;text-decoration:none;font-size:14px;padding:8px 12px;border-radius:5px;transition:.3s}
+    .navbar-menu a:hover{background:#f0f0f0}
+    .navbar-menu .user-menu{display:flex;align-items:center;gap:15px;border-left:1px solid #eee;padding-left:15px}
+    .user-avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;cursor:pointer}
+    .container{max-width:1200px;margin:30px auto;padding:0 20px}
+    .page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:30px}
+    .page-title{font-size:24px;font-weight:600;color:#333}
+    .btn{padding:10px 20px;border:none;border-radius:5px;font-size:14px;font-weight:600;cursor:pointer;transition:.3s;text-decoration:none;display:inline-flex;align-items:center;gap:8px}
+    .btn-primary{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff}
+    .btn-primary:hover{transform:translateY(-2px);box-shadow:0 5px 15px rgba(102,126,234,.4)}
+    .btn-secondary{background:#fff;color:#667eea;border:2px solid #667eea}
+    .btn-secondary:hover{background:#f8f9ff}
+    .btn-danger{background:#e74c3c;color:#fff}
+    .btn-danger:hover{background:#c0392b}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px;margin-bottom:30px}
+    .stat-card{background:#fff;padding:20px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.1);text-align:center}
+    .stat-number{font-size:32px;font-weight:700;color:#667eea}
+    .stat-label{font-size:13px;color:#999;margin-top:8px;text-transform:uppercase}
+    .content-section{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:30px}
+    .card{background:#fff;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.1);padding:20px}
+    .card-title{font-size:18px;font-weight:600;color:#333;margin-bottom:15px;display:flex;justify-content:space-between;align-items:center}
+    .vault-list{list-style:none}
+    .vault-item{padding:12px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center;transition:.3s}
+    .vault-item:hover{background:#f9f9f9}
+    .vault-item:last-child{border-bottom:none}
+    .vault-name{font-weight:500;color:#333}
+    .vault-category{font-size:12px;color:#999;margin-top:4px}
+    .vault-actions{display:flex;gap:8px}
+    .vault-actions button{padding:6px 12px;border:none;border-radius:4px;font-size:12px;cursor:pointer;background:#f0f0f0;color:#333;transition:.3s}
+    .vault-actions button:hover{background:#667eea;color:#fff}
+    .empty-state{text-align:center;padding:40px;color:#999}
+    .empty-state p{margin-bottom:15px}
+    .modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center}
+    .modal.show{display:flex}
+    .modal-content{background:#fff;padding:30px;border-radius:10px;max-width:500px;width:90%;max-height:80vh;overflow-y:auto}
+    .modal-header{font-size:20px;font-weight:600;color:#333;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center}
+    .close-btn{background:none;border:none;font-size:24px;cursor:pointer;color:#999}
+    .form-group{margin-bottom:15px}
+    .form-group label{display:block;margin-bottom:6px;font-weight:500;color:#333;font-size:14px}
+    .form-group input,.form-group textarea,.form-group select{width:100%;padding:10px;border:1px solid #ddd;border-radius:5px;font-size:14px;font-family:inherit}
+    .form-group textarea{resize:vertical;min-height:100px}
+    .form-group input:focus,.form-group textarea:focus,.form-group select:focus{outline:none;border-color:#667eea;box-shadow:0 0 5px rgba(102,126,234,.1)}
+    .form-group small{display:block;margin-top:5px;font-size:12px;color:#999}
+    .detail-row{padding:12px 0;border-bottom:1px solid #eee;display:flex;justify-content:space-between}
+    .detail-row:last-child{border-bottom:none}
+    .detail-row strong{color:#333}
+    .detail-row span{color:#666}
+    .modal-footer{margin-top:20px;display:flex;gap:10px;justify-content:flex-end}
+    .data-field-row{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:center;margin-bottom:10px}
+    .data-field-row input{margin:0}
+    .data-field-row button{padding:6px 12px;background:#e74c3c;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:12px}
+    .uploaded-file{display:flex;justify-content:space-between;align-items:center;padding:8px;background:#f9f9f9;border-radius:4px;margin-bottom:5px}
+    .uploaded-file button{padding:4px 8px;background:#e74c3c;color:#fff;border:none;border-radius:3px;cursor:pointer;font-size:12px}
+    .notification{position:fixed;bottom:20px;right:20px;background:#fff;padding:15px 20px;border-radius:5px;box-shadow:0 5px 15px rgba(0,0,0,.2);z-index:2000;animation:slideIn .3s ease-in}
+    @keyframes slideIn{from{transform:translateX(400px);opacity:0}to{transform:translateX(0);opacity:1}}
+    .notification.success{border-left:4px solid #27ae60;color:#27ae60}
+    .notification.error{border-left:4px solid #e74c3c;color:#e74c3c}
+    @media (max-width:768px){
+      .content-section{grid-template-columns:1fr}
+      .navbar{flex-direction:column;gap:15px}
+      .navbar-menu{width:100%;justify-content:space-between;flex-wrap:wrap}
+    }
+  </style>
+</head>
+<body>
+  <!-- Navbar -->
+  <div class="navbar">
+    <div class="navbar-brand">🛡️ Privacy Vault</div>
+    <div class="navbar-menu">
+      <a href="/dashboard">Dashboard</a>
+      <a href="/admin" id="adminLink">Admin</a>
+      <div class="user-menu">
+        <span id="userEmail"><%= user.email %></span>
+        <div class="user-avatar" id="userAvatar"><%= user.username.charAt(0).toUpperCase() %></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="container">
+    <div class="page-header">
+      <h1 class="page-title">Welcome, <%= user.username %>!</h1>
+      <button class="btn btn-primary" id="openCreateVaultBtn">➕ Create Vault</button>
+    </div>
+
+    <!-- Statistics -->
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-number" id="vaultCount">0</div>
+        <div class="stat-label">Vaults</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="sharedCount">0</div>
+        <div class="stat-label">Shared</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="disclosureCount">0</div>
+        <div class="stat-label">Disclosures</div>
+      </div>
+    </div>
+
+    <!-- Content -->
+    <div class="content-section">
+      <!-- Recent Vaults -->
+      <div class="card">
+        <div class="card-title">
+          Recent Vaults
+          <a href="/dashboard" class="btn btn-secondary" style="padding:6px 12px;font-size:12px;">View All</a>
+        </div>
+        <ul class="vault-list" id="vaultList">
+          <div class="empty-state">
+            <p>No vaults yet</p>
+            <button class="btn btn-primary" id="emptyCreateBtn">Create one now</button>
+          </div>
+        </ul>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="card">
+        <div class="card-title">Quick Actions</div>
+        <div style="display:grid;gap:10px;">
+          <button class="btn btn-primary" style="width:100%;" id="openCreateVaultBtn2">📝 Create New Vault</button>
+          <button class="btn btn-secondary" style="width:100%;" id="openShareModalBtn">🔗 Share Vault</button>
+          <button class="btn btn-secondary" style="width:100%;" id="openDisclosureModalBtn">📋 Create Disclosure</button>
+          <button class="btn btn-secondary" style="width:100%;" id="changePasswordBtn">🔐 Change Password</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ✅ Create Vault Modal -->
+  <div class="modal" id="createVaultModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span>Create New Vault</span>
+        <button class="close-btn" id="closeCreateVaultBtn">&times;</button>
+      </div>
+      <form id="vaultForm">
+        <div class="form-group">
+          <label>Title *</label>
+          <input type="text" id="vaultTitle" required placeholder="My Important Documents">
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <textarea id="vaultDesc" placeholder="Optional description"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Category *</label>
+          <select id="vaultCategory" required>
+            <option value="">Select category</option>
+            <option value="personal_documents">📄 Personal Documents</option>
+            <option value="financial">💰 Financial</option>
+            <option value="medical">⚕️ Medical</option>
+            <option value="legal">⚖️ Legal</option>
+            <option value="credentials">🔐 Credentials</option>
+            <option value="identity">👤 Identity</option>
+            <option value="contacts">👥 Contacts</option>
+            <option value="notes">📝 Notes</option>
+            <option value="other">📦 Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Vault Password *</label>
+          <input type="password" id="vaultPassword" required minlength="8" 
+                 placeholder="Enter password to encrypt this vault">
+          <small>Minimum 8 characters. This password encrypts your vault data.</small>
+        </div>
+        <div class="form-group">
+          <label>Confidentiality Level</label>
+          <select id="vaultConfidentiality">
+            <option value="confidential">🔒 Confidential</option>
+            <option value="public">🌐 Public</option>
+            <option value="highly_confidential">🔐 Highly Confidential</option>
+            <option value="top_secret">🚨 Top Secret</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%;">Create Vault</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ✅ Enhanced View Vault Modal with Decryption -->
+  <div class="modal" id="viewVaultModal">
+    <div class="modal-content" style="max-width:700px;">
+      <div class="modal-header">
+        <span>Vault Details</span>
+        <button class="close-btn" id="closeViewVaultBtn">&times;</button>
+      </div>
+      
+      <!-- Metadata Section -->
+      <div class="vault-details">
+        <div class="detail-row">
+          <strong>Title:</strong>
+          <span id="viewVaultTitle">-</span>
+        </div>
+        <div class="detail-row">
+          <strong>Category:</strong>
+          <span id="viewVaultCategory">-</span>
+        </div>
+        <div class="detail-row">
+          <strong>Description:</strong>
+          <span id="viewVaultDesc">-</span>
+        </div>
+        <div class="detail-row">
+          <strong>Confidentiality:</strong>
+          <span id="viewVaultConfidentiality">-</span>
+        </div>
+        <div class="detail-row">
+          <strong>Created:</strong>
+          <span id="viewVaultCreated">-</span>
+        </div>
+        <div class="detail-row">
+          <strong>Access Count:</strong>
+          <span id="viewVaultAccess">-</span>
+        </div>
+      </div>
+      
+      <!-- ✅ Password Unlock Section -->
+      <div id="viewPasswordSection" style="margin-top:20px;padding-top:20px;border-top:1px solid #eee;">
+        <p style="margin-bottom:15px;color:#666;font-weight:500;">🔒 Enter password to view vault contents:</p>
+        <div class="form-group">
+          <input type="password" id="viewVaultPassword" placeholder="Enter vault password" style="margin-bottom:10px;">
+        </div>
+        <button type="button" class="btn btn-primary" style="width:100%;" id="unlockViewVaultBtn">
+          🔓 Unlock and View Contents
+        </button>
+      </div>
+      
+      <!-- ✅ Decrypted Data Section (Hidden until unlocked) -->
+      <div id="viewDecryptedSection" style="display:none;margin-top:20px;padding-top:20px;border-top:1px solid #eee;">
+        <h3 style="font-size:16px;font-weight:600;margin-bottom:15px;color:#333;">📋 Vault Contents</h3>
+        
+        <!-- Custom Fields -->
+        <div id="viewFieldsContainer" style="margin-bottom:20px;">
+          <h4 style="font-size:14px;font-weight:600;margin-bottom:10px;color:#666;">Custom Fields:</h4>
+          <div id="viewFieldsList" style="background:#f9f9f9;padding:15px;border-radius:5px;"></div>
+        </div>
+        
+        <!-- Files -->
+        <div id="viewFilesContainer" style="margin-bottom:20px;">
+          <h4 style="font-size:14px;font-weight:600;margin-bottom:10px;color:#666;">Attached Files:</h4>
+          <div id="viewFilesList" style="background:#f9f9f9;padding:15px;border-radius:5px;"></div>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="closeViewBtn2">Close</button>
+        <button type="button" class="btn btn-danger" id="deleteVaultBtn">Delete Vault</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ✅ Edit Vault Modal -->
+  <div class="modal" id="editVaultModal">
+    <div class="modal-content" style="max-width:700px;">
+      <div class="modal-header">
+        <span>Edit Vault - <span id="editVaultTitle"></span></span>
+        <button class="close-btn" id="closeEditVaultBtn">&times;</button>
+      </div>
+      
+      <!-- Password Verification Step -->
+      <div id="editPasswordStep" style="display:block;">
+        <p style="margin-bottom:15px;color:#666;">Enter vault password to unlock and edit:</p>
+        <div class="form-group">
+          <label>Vault Password *</label>
+          <input type="password" id="editVaultPassword" required placeholder="Enter vault password">
+        </div>
+        <button type="button" class="btn btn-primary" style="width:100%;" id="unlockVaultBtn">
+          🔓 Unlock Vault
+        </button>
+      </div>
+      
+      <!-- Edit Form (shown after password verification) -->
+      <div id="editFormStep" style="display:none;">
+        <form id="editVaultForm">
+          <div class="form-group">
+            <label>Title</label>
+            <input type="text" id="editTitle" placeholder="Vault title">
+          </div>
+          
+          <div class="form-group">
+            <label>Description</label>
+            <textarea id="editDescription" placeholder="Description"></textarea>
+          </div>
+          
+          <div class="form-group">
+            <label>Add Data Fields</label>
+            <div id="dataFieldsContainer" style="display:grid;gap:10px;margin-top:10px;"></div>
+            <button type="button" class="btn btn-secondary" style="margin-top:10px;" id="addFieldBtn">
+              ➕ Add Field
+            </button>
+          </div>
+          
+          <div class="form-group">
+            <label>Upload Files</label>
+            <input type="file" id="vaultFiles" multiple>
+            <small>Upload documents, images, or any files (max 10MB per file)</small>
+            <div id="uploadedFilesList" style="margin-top:10px;"></div>
+          </div>
+          
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" id="cancelEditBtn">Cancel</button>
+            <button type="submit" class="btn btn-primary">💾 Save Changes</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ✅ Share Modal -->
+  <div class="modal" id="shareModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span>Share Vault</span>
+        <button class="close-btn" id="closeShareModalBtn">&times;</button>
+      </div>
+      <form id="shareForm">
+        <div class="form-group">
+          <label>Select Vault *</label>
+          <select id="vaultSelect" required>
+            <option value="">Loading vaults...</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Recipient Email *</label>
+          <input type="email" id="shareEmail" required placeholder="recipient@example.com">
+        </div>
+        <div class="form-group">
+          <label>Access Level *</label>
+          <select id="shareAccess" required>
+            <option value="read">Read Only</option>
+            <option value="write">Read & Write</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%;">Share Vault</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="../../js/dashboard.js" defer></script>
+</body>
+</html>
