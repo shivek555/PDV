@@ -27,7 +27,7 @@ const {
 } = require('../services/encryption');
 const { sendDisclosureNotificationEmail } = require('../services/mailer');
 const crypto = require('crypto');
-const uuid = require('uuid');
+
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:5000';
 
@@ -74,10 +74,10 @@ const createDisclosure = asyncHandler(async (req, res) => {
 
     // Generate disclosure token
     const disclosureToken = crypto.randomBytes(32).toString('hex');
-
+    const uuid = await import('uuid');
     // Create disclosure object
     const disclosure = {
-      id: uuid.v4(),
+      id: uuid(),
       vaultId: vaultId.toString(),
       userId: userId.toString(),
       recipientEmail: recipientEmail || 'anonymous',

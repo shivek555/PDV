@@ -19,7 +19,7 @@ const { cacheSet, cacheDel } = require('../config/redis');
 const { asyncHandler, ValidationError, AuthError, ConflictError } = require('../middleware/errorHandler');
 const { validateSchema, signupSchema, loginSchema } = require('../middleware/validate');
 const OTPService = require('../services/otpService'); // ✅ NEW
-const uuid = require('uuid');
+
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:5000';
 
@@ -182,7 +182,8 @@ const login = asyncHandler(async (req, res) => {
     const refreshToken = generateRefreshToken(user);
 
     // Cache session and refresh token
-    const sessionId = uuid.v4();
+    const uuid = await import('uuid');
+    const sessionId = uuid();
     await cacheSession(`session:${sessionId}`, {
       userId: user._id,
       token,
