@@ -26,7 +26,7 @@ const SMTP_FROM = process.env.SMTP_FROM || 'noreply@privacyvault.com';
 const transporter = nodemailer.createTransport({
   host: SMTP_HOST,
   port: SMTP_PORT,
-  secure: SMTP_PORT === 465, // true for 465, false for other ports
+  secure: SMTP_PORT === 587, // true for 465, false for other ports
   auth: {
     user: SMTP_USER,
     pass: SMTP_PASSWORD

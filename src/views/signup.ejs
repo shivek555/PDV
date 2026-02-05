@@ -4,125 +4,526 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sign Up - Privacy Vault</title>
-    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link
+  rel="stylesheet"
+  href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"
+/>
+
+
   <style>
-    /* Keeping styles inline for now; migrate later to /public/css/signup.css if CSP blocks style attributes */
     * { margin: 0; padding: 0; box-sizing: border-box; }
+
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 32px 20px;
+      background: radial-gradient(circle at top left, #738ffe 0, #5a6ff0 25%, #5e5ce6 50%, #6a4fd3 75%, #5b3fb4 100%);
+      color: #fff;
     }
-    .container { background: white; border-radius: 10px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2); max-width: 500px; width: 100%; padding: 40px; }
-    .header { text-align: center; margin-bottom: 30px; }
-    .header h1 { color: #333; font-size: 28px; margin-bottom: 10px; }
-    .header p { color: #666; font-size: 14px; }
-    .form-group { margin-bottom: 20px; }
-    label { display: block; margin-bottom: 8px; color: #333; font-weight: 500; font-size: 14px; }
-    input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px; transition: border-color 0.3s; }
-    input:focus, select:focus { outline: none; border-color: #667eea; box-shadow: 0 0 5px rgba(102, 126, 234, 0.1); }
-    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-    .password-strength { margin-top: 5px; padding: 8px 10px; border-radius: 4px; font-size: 12px; background: #f0f0f0; color: #666; }
-    .strength-bar { width: 100%; height: 4px; background: #ddd; border-radius: 2px; margin-top: 4px; overflow: hidden; }
-    .strength-fill { height: 100%; width: 0%; transition: width 0.3s, background-color 0.3s; }
-    .strength-fill.weak { width: 33%; background-color: #e74c3c; }
-    .strength-fill.medium { width: 66%; background-color: #f39c12; }
-    .strength-fill.strong { width: 100%; background-color: #27ae60; }
-    .checkbox-group { display: flex; align-items: center; gap: 10px; }
-    .checkbox-group input[type="checkbox"] { width: auto; }
-    .checkbox-group label { margin-bottom: 0; flex: 1; font-size: 13px; }
-    .checkbox-group a { color: #667eea; text-decoration: none; font-weight: 500; }
-    .checkbox-group a:hover { text-decoration: underline; }
-    .btn { width: 100%; padding: 12px; border: none; border-radius: 5px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s; margin-top: 10px; }
-    .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
-    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4); }
-    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
-    .error { color: #e74c3c; font-size: 13px; margin-top: 4px; display: none; }
+
+    .page-container {
+      max-width: 1100px;
+      width: 100%;
+    }
+
+    .page-header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .page-title {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 26px;
+      font-weight: 600;
+    }
+
+    .page-title-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.18);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .page-subtitle {
+      margin-top: 6px;
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .cards-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+      gap: 24px;
+      align-items: stretch;
+    }
+
+    @media (max-width: 900px) {
+      .cards-row {
+        grid-template-columns: 1fr;
+      }
+    }
+.bi::before,
+[class^="bi-"]::before,
+[class*=" bi-"]::before {
+  font-family: "bootstrap-icons" !important;
+  font-style: normal;
+}
+    .card {
+      border-radius: 18px;
+      box-shadow: 0 18px 45px rgba(15, 23, 42, 0.45);
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .card-inner {
+      padding: 26px 28px 24px;
+      height: 100%;
+    }
+
+    /* LEFT card: form */
+
+    .card-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: #111827;
+      margin-bottom: 6px;
+    }
+
+    .card-subtitle {
+      font-size: 12px;
+      color: #6b7280;
+      margin-bottom: 18px;
+    }
+
+    .form-group { margin-bottom: 16px; }
+    label {
+      display: block;
+      margin-bottom: 6px;
+      color: #374151;
+      font-weight: 500;
+      font-size: 13px;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px 11px;
+      border-radius: 8px;
+      border: 1px solid #e5e7eb;
+      font-size: 13px;
+      background: #f9fafb;
+      transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: #6366f1;
+      background: #ffffff;
+      box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.25);
+    }
+
+    .hint {
+      font-size: 11px;
+      color: #9ca3af;
+      margin-top: 4px;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .password-strength {
+      margin-top: 6px;
+      padding: 8px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      background: #f3f4ff;
+      color: #4b5563;
+    }
+
+    .strength-bar {
+      width: 100%;
+      height: 4px;
+      background: #e5e7eb;
+      border-radius: 999px;
+      margin-top: 4px;
+      overflow: hidden;
+    }
+
+    .strength-fill {
+      height: 100%;
+      width: 0%;
+      transition: width 0.3s, background-color 0.3s;
+    }
+
+    .strength-fill.weak { width: 33%; background-color: #f97373; }
+    .strength-fill.medium { width: 66%; background-color: #fbbf24; }
+    .strength-fill.strong { width: 100%; background-color: #22c55e; }
+
+    .checkbox-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .checkbox-row input[type="checkbox"] {
+      margin-top: 3px;
+    }
+
+    .checkbox-row label {
+      margin-bottom: 0;
+      font-size: 12px;
+      color: #4b5563;
+      font-weight: 400;
+    }
+
+    .checkbox-row a {
+      color: #6366f1;
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .checkbox-row a:hover { text-decoration: underline; }
+
+    .btn-primary {
+      width: 100%;
+      margin-top: 12px;
+      padding: 11px;
+      border-radius: 999px;
+      border: none;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      color: #ffffff;
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 20px rgba(55, 65, 81, 0.25);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .error {
+      color: #b91c1c;
+      font-size: 11px;
+      margin-top: 3px;
+      display: none;
+    }
     .error.show { display: block; }
-    .footer { text-align: center; margin-top: 20px; color: #666; font-size: 14px; }
-    .footer a { color: #667eea; text-decoration: none; font-weight: 600; }
-    .footer a:hover { text-decoration: underline; }
-    .alert { padding: 12px; border-radius: 5px; margin-bottom: 20px; display: none; }
+
+    .alert {
+      padding: 9px 10px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      font-size: 12px;
+      display: none;
+    }
     .alert.show { display: block; }
-    .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-    .alert-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-    .loading { display: none; text-align: center; color: #667eea; }
-    .spinner { display: inline-block; width: 20px; height: 20px; border: 3px solid #f3f3f3; border-top: 3px solid #667eea; border-radius: 50%; animation: spin 1s linear infinite; }
+    .alert-success {
+      background: #ecfdf5;
+      color: #166534;
+      border: 1px solid #bbf7d0;
+    }
+    .alert-error {
+      background: #fef2f2;
+      color: #b91c1c;
+      border: 1px solid #fecaca;
+    }
+
+    .loading {
+      margin-top: 8px;
+      display: none;
+      text-align: center;
+      color: #4f46e5;
+      font-size: 12px;
+    }
+    .spinner {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      border: 2px solid #eef2ff;
+      border-top: 2px solid #4f46e5;
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+      margin-right: 6px;
+    }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+    .form-footer {
+      margin-top: 12px;
+      text-align: center;
+      font-size: 12px;
+      color: #6b7280;
+    }
+
+    .form-footer a {
+      color: #4f46e5;
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .form-footer a:hover { text-decoration: underline; }
+
+    /* RIGHT card: security features */
+
+    .security-card {
+      background: linear-gradient(135deg, #16a34a 0%, #22c55e 40%, #10b981 100%);
+      color: #ecfdf5;
+    }
+
+    .security-inner {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      padding: 26px 28px 24px;
+    }
+
+    .security-heading {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .security-heading i {
+      font-size: 20px;
+      background: rgba(15, 118, 110, 0.18);
+      border-radius: 999px;
+      padding: 6px;
+    }
+
+    .security-heading h2 {
+      font-size: 18px;
+      margin: 0;
+    }
+
+    .security-lead {
+      font-size: 12px;
+      color: #d1fae5;
+      margin-bottom: 18px;
+    }
+
+    .feature-list {
+      margin-bottom: 18px;
+    }
+
+    .feature-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+
+    .feature-item i {
+      margin-top: 2px;
+      font-size: 15px;
+    }
+
+    .feature-item span {
+      color: #f0fdf4;
+    }
+
+    .how-card {
+      margin-top: auto;
+      border-radius: 10px;
+      background: rgba(6, 95, 70, 0.25);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      padding: 10px 12px;
+      font-size: 11px;
+      color: #dcfce7;
+    }
+
+    .how-card-title {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="header">
-      <h1>🛡️ Privacy Vault</h1>
-      <p>Create your secure account</p>
+  <div class="page-container">
+    <div class="page-header">
+      <div class="page-title">
+        <div class="page-title-icon">🔐</div>
+        <span>Privacy‑First Data Vault</span>
+      </div>
+      <div class="page-subtitle">
+        Your personal data, encrypted and under your control
+      </div>
     </div>
 
-    <div class="alert alert-error" id="errorAlert"></div>
-    <div class="alert alert-success" id="successAlert"></div>
+    <div class="cards-row">
 
-    <form id="signupForm">
-      <div class="form-group">
-        <label for="username">Username</label>
-        <input type="text" id="username" name="username" placeholder="Choose a username" required>
-        <div class="error" id="usernameError"></div>
-      </div>
+      <!-- LEFT: Create account card -->
+      <div class="card">
+        <div class="card-inner">
+          <div class="card-title">Create Account</div>
+          <div class="card-subtitle">
+            30‑character username, strong password, and secure email to activate your vault.
+          </div>
 
-      <div class="form-group">
-        <label for="email">Email Address</label>
-        <input type="email" id="email" name="email" placeholder="your@email.com" required>
-        <div class="error" id="emailError"></div>
-      </div>
+          <div class="alert alert-error" id="errorAlert"></div>
+          <div class="alert alert-success" id="successAlert"></div>
 
-      <div class="form-row">
-        <div class="form-group">
-          <label for="firstName">First Name</label>
-          <input type="text" id="firstName" name="firstName" placeholder="First name">
+          <form id="signupForm">
+            <div class="form-group">
+              <label for="username">Username</label>
+              <input type="text" id="username" name="username" placeholder="3–30 characters, letters, numbers, dots, hyphens, underscores only" required>
+              <div class="error" id="usernameError"></div>
+            </div>
+
+            <div class="form-group">
+              <label for="email">Email</label>
+              <input type="email" id="email" name="email" placeholder="you@example.com" required>
+              <div class="error" id="emailError"></div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="firstName">First Name</label>
+                <input type="text" id="firstName" name="firstName" placeholder="First name">
+              </div>
+              <div class="form-group">
+                <label for="lastName">Last Name</label>
+                <input type="text" id="lastName" name="lastName" placeholder="Last name">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="password">Password</label>
+              <input
+                type="password"
+                id="password"
+                name="password"
+                placeholder="At least 8 characters with upper, lower, number & symbol"
+                required>
+              <div class="password-strength">
+                <div class="strength-bar">
+                  <div class="strength-fill" id="strengthFill"></div>
+                </div>
+                <p id="strengthText">Weak password</p>
+              </div>
+              <div class="error" id="passwordError"></div>
+            </div>
+
+            <div class="form-group">
+              <label for="confirmPassword">Confirm Password</label>
+              <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Re‑enter your password" required>
+              <div class="error" id="confirmPasswordError"></div>
+            </div>
+
+            <div class="form-group">
+              <div class="checkbox-row">
+                <input type="checkbox" id="terms" name="terms" required>
+                <label for="terms">
+                  I agree to the
+                  <a href="#" target="_blank">Terms of Service</a> and
+                  <a href="#" target="_blank">Privacy Policy</a>.
+                </label>
+              </div>
+              <div class="error" id="termsError"></div>
+            </div>
+
+            <button type="submit" class="btn-primary" id="submitBtn">
+              <span>➕ Create Account</span>
+            </button>
+
+            <div class="loading" id="loading">
+              <span class="spinner"></span>
+              <span>Creating your account…</span>
+            </div>
+          </form>
+
+          <div class="form-footer">
+            Already have an account?
+            <a href="/login">Login here</a>
+          </div>
         </div>
-        <div class="form-group">
-          <label for="lastName">Last Name</label>
-          <input type="text" id="lastName" name="lastName" placeholder="Last name">
+      </div>
+
+      <!-- RIGHT: Security features card -->
+      <div class="card security-card">
+        <div class="security-inner">
+          <div>
+            <div class="security-heading">
+              <i class="bi bi-shield-check"></i>
+              <h2>Security Features</h2>
+            </div>
+            <p class="security-lead">
+              Privacy Vault is architected with end‑to‑end encryption and zero‑knowledge principles.
+            </p>
+
+            <div class="feature-list">
+              <div class="feature-item">
+                <i class="bi bi-lock-fill"></i>
+                <span>AES‑256 encryption for all personal data</span>
+              </div>
+
+              <div class="feature-item">
+                <i class="bi bi-eye-slash"></i>
+                <span>Zero‑knowledge architecture – we can't see your data</span>
+              </div>
+
+              <div class="feature-item">
+                <i class="bi bi-share"></i>
+                <span>Selective disclosure – share only what you choose</span>
+              </div>
+
+              <div class="feature-item">
+                <i class="bi bi-key"></i>
+                <span>Your password is your encryption key</span>
+              </div>
+
+              <div class="feature-item">
+                <i class="bi bi-phone"></i>
+                <span>Two‑factor authentication support</span>
+              </div>
+
+              <div class="feature-item">
+                <i class="bi bi-graph-up"></i>
+                <span>Complete audit trail of data access</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="how-card">
+            <div class="how-card-title">How it works</div>
+            <div>
+              1. Your data is encrypted with your password before storage<br>
+              2. Only you can decrypt and view your information<br>
+              3. Create secure disclosures to share specific data<br>
+              4. Maintain complete control over your privacy
+            </div>
+          </div>
         </div>
       </div>
 
-      <div class="form-group">
-        <label for="password">Password</label>
-        <input type="password" id="password" name="password" placeholder="Minimum 8 characters. 1 uppercase 1 lowercase 1 number and 1 symbol is mandatory." required>
-        <div class="password-strength">
-          <div class="strength-bar"><div class="strength-fill" id="strengthFill"></div></div>
-          <p id="strengthText">Weak password</p>
-        </div>
-        <div class="error" id="passwordError"></div>
-      </div>
-
-      <div class="form-group">
-        <label for="confirmPassword">Confirm Password</label>
-        <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Confirm your password" required>
-        <div class="error" id="confirmPasswordError"></div>
-      </div>
-
-      <div class="form-group">
-        <div class="checkbox-group">
-          <input type="checkbox" id="terms" name="terms" required>
-          <label for="terms">
-            I agree to the <a href="#" target="_blank">Terms of Service</a> and <a href="#" target="_blank">Privacy Policy</a>
-          </label>
-        </div>
-        <div class="error" id="termsError"></div>
-      </div>
-
-      <button type="submit" class="btn btn-primary" id="submitBtn">Create Account</button>
-
-      <div class="loading" id="loading">
-        <div class="spinner"></div>
-        <p>Creating your account...</p>
-      </div>
-    </form>
-
-    <div class="footer">Already have an account? <a href="/login">Login here</a></div>
+    </div>
   </div>
 
-  <!-- External JS only; no inline scripts (CSP-compliant) -->
   <script src="../../js/signup.js" defer></script>
 </body>
 </html>

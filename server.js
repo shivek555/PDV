@@ -67,9 +67,13 @@ app.use(
         "frame-ancestors": ["'none'"],
         "script-src": ["'self'"],
         "script-src-attr": ["'none'"],
-        "style-src": ["'self'", "'unsafe-inline'"], 
+        "style-src": [
+          "'self'",
+          "'unsafe-inline'",
+          "https://cdn.jsdelivr.net"
+        ], 
         "img-src": ["'self'", "data:", "blob:"],
-        "font-src": ["'self'", "data:"],
+        "font-src": ["'self'", "data:","https://cdn.jsdelivr.net"],
         "connect-src": ["'self'", "ws:", "wss:"],
         "object-src": ["'none'"]
       }
@@ -192,6 +196,12 @@ app.get('/signup', (req, res) => {
 
 app.get('/login', (req, res) => {
   res.render('login', { title: 'Privacy Vault - Login' });
+});
+app.get('/reset-password/:token', (req, res) => {
+  res.render('reset', {
+    title: 'Privacy Vault - Reset Password',
+    token: req.params.token
+  });
 });
 
 // ✅ FIX: Removed authMiddleware - page loads, client JS fetches user

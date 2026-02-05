@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reset Password - Privacy Vault</title>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px;
+    }
+    .container { background: white; border-radius: 10px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2); max-width: 450px; width: 100%; padding: 40px; }
+    .header { text-align: center; margin-bottom: 30px; }
+    .header h1 { color: #333; font-size: 28px; margin-bottom: 10px; }
+    .header p { color: #666; font-size: 14px; }
+    .form-group { margin-bottom: 20px; }
+    label { display: block; margin-bottom: 8px; color: #333; font-weight: 500; font-size: 14px; }
+    input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px; transition: border-color 0.3s; }
+    input:focus { outline: none; border-color: #667eea; box-shadow: 0 0 5px rgba(102, 126, 234, 0.1); }
+    .btn { width: 100%; padding: 12px; border: none; border-radius: 5px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
+    .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4); }
+    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    .alert { padding: 12px; border-radius: 5px; margin-bottom: 20px; display: none; }
+    .alert.show { display: block; }
+    .alert-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .loading { display: none; text-align: center; color: #667eea; margin-top: 15px; }
+    .loading.show { display: block; }
+    .spinner { display: inline-block; width: 20px; height: 20px; border: 3px solid #f3f3f3; border-top: 3px solid #667eea; border-radius: 50%; animation: spin 1s linear infinite; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .footer { text-align: center; margin-top: 20px; color: #666; font-size: 13px; }
+    .footer a { color: #667eea; text-decoration: none; font-weight: 600; }
+    .footer a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🔑 Reset Password</h1>
+      <p>Set a new password for your Privacy Vault account</p>
+    </div>
+
+    <div class="alert alert-error" id="errorAlert"></div>
+    <div class="alert alert-success" id="successAlert"></div>
+
+    <form id="resetForm">
+      <!-- token from server -->
+      <input type="hidden" id="token" value="<%= token %>">
+
+      <div class="form-group">
+        <label for="password">New Password</label>
+        <input type="password" id="password" name="password" placeholder="Enter new password" required autocomplete="new-password">
+      </div>
+
+      <div class="form-group">
+        <label for="confirmPassword">Confirm New Password</label>
+        <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Confirm new password" required autocomplete="new-password">
+      </div>
+
+      <button type="submit" class="btn btn-primary" id="submitBtn">Reset Password</button>
+
+      <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <p>Updating password...</p>
+      </div>
+    </form>
+
+    <div class="footer">
+      <p>Remembered your password? <a href="/login">Back to Login</a></p>
+    </div>
+  </div>
+
+  <script src="/js/reset.js"></script>
+</body>
+</html>

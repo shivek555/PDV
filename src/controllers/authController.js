@@ -18,22 +18,25 @@ const { cacheSession, invalidateUserCache } = require('../services/caching');
 const { cacheSet, cacheDel } = require('../config/redis');
 const { asyncHandler, ValidationError, AuthError, ConflictError } = require('../middleware/errorHandler');
 const { validateSchema, signupSchema, loginSchema } = require('../middleware/validate');
-const OTPService = require('../services/otpService'); // ✅ NEW
-
+const OTPService = require('../services/otpService');
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:5000';
 
 /**
+ * Helper: generate UUID v4 (ESM uuid via dynamic import)
+ */
+async function getUuidV4() {
+  const { v4 } = await import('uuid');
+  return v4();
+}
+
+/**
  * Register new user
- * 
- * @param {Object} req - Express request
- * @param {Object} res - Express response
  */
 const register = asyncHandler(async (req, res) => {
   try {
     const { username, email, password, firstName, lastName } = req.body;
 
-    // Validate input
     const { error, value } = signupSchema.validate(req.body, { abortEarly: false });
     if (error) {
       throw new ValidationError('Validation failed', error.details);
@@ -41,7 +44,6 @@ const register = asyncHandler(async (req, res) => {
 
     console.log(`📝 Registration attempt: ${email}`);
 
-    // Check if user already exists
     const existingUser = await User.findOne({
       $or: [{ email: email.toLowerCase() }, { username: username.toLowerCase() }]
     });
@@ -53,7 +55,6 @@ const register = asyncHandler(async (req, res) => {
       throw new ConflictError('Username already taken');
     }
 
-    // Create new user
     const user = new User({
       username: username.toLowerCase(),
       email: email.toLowerCase(),
@@ -62,22 +63,18 @@ const register = asyncHandler(async (req, res) => {
       lastName
     });
 
-    // Save user (password will be hashed by pre-save hook)
     await user.save();
     console.log(`✓ User registered: ${user.username}`);
 
-    // Generate verification token
     const verificationToken = user.generateVerificationToken();
     await user.save();
 
-    // Cache verification token
     await cacheSet(
       `verify_token:${verificationToken}`,
       user._id.toString(),
       86400 // 24 hours
     );
 
-    // Send verification email
     try {
       await sendVerificationEmail(
         user.email,
@@ -91,11 +88,9 @@ const register = asyncHandler(async (req, res) => {
       // Continue anyway, user can request resend
     }
 
-    // Generate tokens
     const token = generateToken(user);
     const refreshToken = generateRefreshToken(user);
 
-    // Cache refresh token
     await cacheSession(`refresh_token:${user._id}`, {
       token: refreshToken,
       createdAt: new Date(),
@@ -119,16 +114,11 @@ const register = asyncHandler(async (req, res) => {
 
 /**
  * Login user (standard)
- * ✅ FIXED: Now properly selects password field for comparison
- * 
- * @param {Object} req - Express request
- * @param {Object} res - Express response
  */
 const login = asyncHandler(async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Validate input
     const { error } = loginSchema.validate(req.body);
     if (error) {
       throw new ValidationError('Validation failed', { email: error.message });
@@ -136,54 +126,43 @@ const login = asyncHandler(async (req, res) => {
 
     console.log(`🔐 Login attempt: ${email}`);
 
-    // ✅ FIX: Find user WITH password field (select: false bypass)
-    const user = await User.findOne({ 
-      email: email.toLowerCase() 
+    const user = await User.findOne({
+      email: email.toLowerCase()
     }).select('+password +active +suspended +lockoutUntil +loginAttempts +suspendedUntil');
 
     if (!user) {
       throw new AuthError('Invalid email or password');
     }
 
-    // Check if account is locked
     if (user.isLocked) {
       const minutesLeft = Math.ceil((user.lockoutUntil - new Date()) / (1000 * 60));
       throw new AuthError(`Account locked. Try again in ${minutesLeft} minutes`);
     }
 
-    // Check if account is suspended
     if (user.isSuspended) {
       throw new AuthError('Account is suspended');
     }
 
-    // Check if account is active
     if (!user.active) {
       throw new AuthError('Account is inactive');
     }
 
-    // ✅ Verify password (now user.password is available)
     const isPasswordValid = await user.comparePassword(password);
 
     if (!isPasswordValid) {
-      // Increment failed login attempts
       await user.incrementLoginAttempts();
       throw new AuthError('Invalid email or password');
     }
 
-    // Reset login attempts on successful login
     await user.resetLoginAttempts();
-
-    // Record login
     await user.recordLogin(req.ip);
     console.log(`✓ User logged in: ${user.username}`);
 
-    // Generate tokens
     const token = generateToken(user);
     const refreshToken = generateRefreshToken(user);
 
-    // Cache session and refresh token
-    const uuid = await import('uuid');
-    const sessionId = uuid();
+    // ✅ Use dynamic uuid
+    const sessionId = await getUuidV4();
     await cacheSession(`session:${sessionId}`, {
       userId: user._id,
       token,
@@ -215,11 +194,7 @@ const login = asyncHandler(async (req, res) => {
 });
 
 /**
- * ✅ NEW: Request OTP for login
- * Step 1: Verify password, then send OTP to email
- * 
- * @param {Object} req - Express request
- * @param {Object} res - Express response
+ * Request OTP for login
  */
 const requestLoginOTP = asyncHandler(async (req, res) => {
   try {
@@ -231,16 +206,14 @@ const requestLoginOTP = asyncHandler(async (req, res) => {
 
     console.log(`🔐 OTP login requested for: ${email}`);
 
-    // Find user with password
-    const user = await User.findOne({ 
-      email: email.toLowerCase() 
+    const user = await User.findOne({
+      email: email.toLowerCase()
     }).select('+password +active +suspended +lockoutUntil +loginAttempts');
 
     if (!user) {
       throw new AuthError('Invalid credentials');
     }
 
-    // Check account status
     if (user.isLocked) {
       const minutesLeft = Math.ceil((user.lockoutUntil - new Date()) / (1000 * 60));
       throw new AuthError(`Account locked. Try again in ${minutesLeft} minutes`);
@@ -254,7 +227,6 @@ const requestLoginOTP = asyncHandler(async (req, res) => {
       throw new AuthError('Account is inactive');
     }
 
-    // Verify password first
     const isPasswordValid = await user.comparePassword(password);
 
     if (!isPasswordValid) {
@@ -262,17 +234,14 @@ const requestLoginOTP = asyncHandler(async (req, res) => {
       throw new AuthError('Invalid credentials');
     }
 
-    // Generate OTP
     const { otp, expiresAt } = OTPService.generateOTPWithExpiry(10); // 10 minutes
     const hashedOTP = OTPService.hashOTP(otp);
 
-    // Store OTP
     user.loginOTP = hashedOTP;
     user.loginOTPExpires = expiresAt;
     user.otpAttempts = 0;
     await user.save();
 
-    // Send OTP via email
     try {
       await sendEmail({
         to: user.email,
@@ -347,11 +316,7 @@ const requestLoginOTP = asyncHandler(async (req, res) => {
 });
 
 /**
- * ✅ NEW: Verify OTP and complete login
- * Step 2: Verify OTP and issue tokens
- * 
- * @param {Object} req - Express request
- * @param {Object} res - Express response
+ * Verify OTP and complete login
  */
 const verifyLoginOTP = asyncHandler(async (req, res) => {
   try {
@@ -363,16 +328,14 @@ const verifyLoginOTP = asyncHandler(async (req, res) => {
 
     console.log(`🔓 OTP verification for: ${email}`);
 
-    // Find user with OTP fields
-    const user = await User.findOne({ 
-      email: email.toLowerCase() 
+    const user = await User.findOne({
+      email: email.toLowerCase()
     }).select('+loginOTP +loginOTPExpires +otpAttempts');
 
     if (!user || !user.loginOTP) {
       throw new AuthError('Invalid or expired OTP');
     }
 
-    // Check if OTP is expired
     if (OTPService.isExpired(user.loginOTPExpires)) {
       user.loginOTP = null;
       user.loginOTPExpires = null;
@@ -381,7 +344,6 @@ const verifyLoginOTP = asyncHandler(async (req, res) => {
       throw new AuthError('OTP has expired. Please request a new one.');
     }
 
-    // Verify OTP
     const isOTPValid = OTPService.verifyOTP(otp, user.loginOTP);
 
     if (!isOTPValid) {
@@ -399,18 +361,16 @@ const verifyLoginOTP = asyncHandler(async (req, res) => {
       throw new AuthError(`Invalid OTP. ${3 - user.otpAttempts} attempts remaining.`);
     }
 
-    // OTP is valid - clear OTP fields
     user.loginOTP = null;
     user.loginOTPExpires = null;
     user.otpAttempts = 0;
     await user.recordLogin(req.ip);
 
-    // Generate tokens
     const token = generateToken(user);
     const refreshToken = generateRefreshToken(user);
 
-    // Cache session
-    const sessionId = uuid.v4();
+    // ✅ Use dynamic uuid here too
+    const sessionId = await getUuidV4();
     await cacheSession(`session:${sessionId}`, {
       userId: user._id,
       token,
@@ -432,8 +392,8 @@ const verifyLoginOTP = asyncHandler(async (req, res) => {
       message: 'Login successful',
       data: {
         user: user.getDashboardProfile(),
-        token: token,
-        refreshToken: refreshToken,
+        token,
+        refreshToken,
         sessionId
       }
     });
@@ -445,9 +405,6 @@ const verifyLoginOTP = asyncHandler(async (req, res) => {
 
 /**
  * Verify email
- * 
- * @param {Object} req - Express request
- * @param {Object} res - Express response
  */
 const verifyEmail = asyncHandler(async (req, res) => {
   try {
@@ -455,19 +412,16 @@ const verifyEmail = asyncHandler(async (req, res) => {
 
     console.log(`📧 Email verification attempt: ${token.substring(0, 10)}...`);
 
-    // Find user by verification token
     const user = await User.findOne({ verificationToken: token });
 
     if (!user) {
       throw new AuthError('Invalid or expired verification token');
     }
 
-    // Mark email as verified
     user.verified = true;
     user.verificationToken = null;
     await user.save();
 
-    // Invalidate user cache
     await invalidateUserCache(user._id.toString());
 
     console.log(`✓ Email verified: ${user.email}`);
@@ -487,9 +441,6 @@ const verifyEmail = asyncHandler(async (req, res) => {
 
 /**
  * Resend verification email
- * 
- * @param {Object} req - Express request
- * @param {Object} res - Express response
  */
 const resendVerificationEmail = asyncHandler(async (req, res) => {
   try {
@@ -504,7 +455,6 @@ const resendVerificationEmail = asyncHandler(async (req, res) => {
     const user = await User.findOne({ email: email.toLowerCase() });
 
     if (!user) {
-      // Don't reveal if user exists for security
       return res.status(200).json({
         success: true,
         message: 'If email exists, verification link has been sent'
@@ -518,18 +468,15 @@ const resendVerificationEmail = asyncHandler(async (req, res) => {
       });
     }
 
-    // Generate new verification token
     const verificationToken = user.generateVerificationToken();
     await user.save();
 
-    // Cache token
     await cacheSet(
       `verify_token:${verificationToken}`,
       user._id.toString(),
       86400
     );
 
-    // Send email
     await sendVerificationEmail(
       user.email,
       user.username,
@@ -551,9 +498,6 @@ const resendVerificationEmail = asyncHandler(async (req, res) => {
 
 /**
  * Request password reset
- * 
- * @param {Object} req - Express request
- * @param {Object} res - Express response
  */
 const forgotPassword = asyncHandler(async (req, res) => {
   try {
@@ -568,25 +512,21 @@ const forgotPassword = asyncHandler(async (req, res) => {
     const user = await User.findOne({ email: email.toLowerCase() });
 
     if (!user) {
-      // Don't reveal if user exists for security
       return res.status(200).json({
         success: true,
         message: 'If email exists, password reset link has been sent'
       });
     }
 
-    // Generate reset token
     const resetToken = user.generateResetToken();
     await user.save();
 
-    // Cache reset token
     await cacheSet(
       `reset_token:${resetToken}`,
       user._id.toString(),
       3600 // 1 hour
     );
 
-    // Send email
     await sendPasswordResetEmail(
       user.email,
       user.username,
@@ -608,9 +548,6 @@ const forgotPassword = asyncHandler(async (req, res) => {
 
 /**
  * Reset password
- * 
- * @param {Object} req - Express request
- * @param {Object} res - Express response
  */
 const resetPassword = asyncHandler(async (req, res) => {
   try {
@@ -631,7 +568,6 @@ const resetPassword = asyncHandler(async (req, res) => {
 
     console.log(`🔑 Password reset: ${token.substring(0, 10)}...`);
 
-    // Find user
     const user = await User.findOne({
       resetPasswordToken: token,
       resetPasswordExpires: { $gt: new Date() }
@@ -641,13 +577,11 @@ const resetPassword = asyncHandler(async (req, res) => {
       throw new AuthError('Invalid or expired password reset token');
     }
 
-    // Update password (will be hashed by pre-save hook)
     user.password = password;
     user.resetPasswordToken = null;
     user.resetPasswordExpires = null;
     await user.save();
 
-    // Invalidate all user sessions
     await invalidateUserCache(user._id.toString());
 
     console.log(`✓ Password reset for user: ${user.username}`);
@@ -667,9 +601,6 @@ const resetPassword = asyncHandler(async (req, res) => {
 
 /**
  * Refresh token
- * 
- * @param {Object} req - Express request
- * @param {Object} res - Express response
  */
 const refreshAccessToken = asyncHandler(async (req, res) => {
   try {
@@ -681,7 +612,6 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 
     console.log(`🔄 Token refresh attempt`);
 
-    // Get user from middleware (if already validated)
     if (req.tokens) {
       return res.status(200).json({
         success: true,
@@ -693,7 +623,6 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
       });
     }
 
-    // Manual validation if not in middleware
     const user = await User.findById(req.user?.id);
 
     if (!user) {
@@ -703,7 +632,6 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     const newToken = generateToken(user);
     const newRefreshToken = generateRefreshToken(user);
 
-    // Cache new refresh token
     await cacheSet(
       `refresh_token:${user._id}`,
       newRefreshToken,
@@ -728,9 +656,6 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 
 /**
  * Logout user
- * 
- * @param {Object} req - Express request
- * @param {Object} res - Express response
  */
 const logout = asyncHandler(async (req, res) => {
   try {
@@ -740,10 +665,7 @@ const logout = asyncHandler(async (req, res) => {
 
     console.log(`👋 User logout: ${req.user.username}`);
 
-    // Invalidate refresh token
     await cacheDel(`refresh_token:${req.user.id}`);
-
-    // Invalidate user cache
     await invalidateUserCache(req.user.id);
 
     res.status(200).json({
@@ -758,9 +680,6 @@ const logout = asyncHandler(async (req, res) => {
 
 /**
  * Get current user
- * 
- * @param {Object} req - Express request
- * @param {Object} res - Express response
  */
 const getCurrentUser = asyncHandler(async (req, res) => {
   try {
@@ -786,12 +705,11 @@ const getCurrentUser = asyncHandler(async (req, res) => {
   }
 });
 
-// Export controller functions
 module.exports = {
   register,
   login,
-  requestLoginOTP,    // ✅ NEW
-  verifyLoginOTP,     // ✅ NEW
+  requestLoginOTP,
+  verifyLoginOTP,
   verifyEmail,
   resendVerificationEmail,
   forgotPassword,
