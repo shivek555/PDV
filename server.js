@@ -324,12 +324,12 @@ app.use(globalErrorHandler);
 async function startServer() {
   try {
     await initializeServices();
-    server.listen(PORT, () => {
-      console.log(`🚀 Server running at http://localhost:${PORT}`);
-      console.log(`📡 Socket.IO client at /socket.io/socket.io.js`);
-      console.log(`📁 Static files at /js/* and /public/js/*`);
-      console.log(`🧪 Test static: http://localhost:${PORT}/_static-test`);
-    });
+    const PORT = process.env.PORT || 3000;
+
+// Make sure you add '0.0.0.0' as the second argument
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server is running on port ${PORT}`);
+});
   } catch (error) {
     console.error('❌ Failed to start server:', error);
     process.exit(1);
