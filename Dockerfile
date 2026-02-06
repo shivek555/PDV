@@ -19,4 +19,4 @@ ENV PORT=3000
 EXPOSE 3000
 
 # Start app (change if entry file app.js hai)
-CMD ["node", "server.js"]
+CMD ["npm", "start"]
